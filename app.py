@@ -22,8 +22,6 @@ class Application:
         self.frame2 = Frame(self.root, bd=4, background='#1d1e1e')
         self.frame2.place(relx=0.02, rely=0.01, relwidth=0.96, relheight=0.18)
 
-        # self.saldo = 1000.00
-        self.limite = 500
         self.lista_usuarios = []
         self.mostraUsuarios()
 
@@ -92,6 +90,7 @@ class Application:
     
     def mostraUsuarios(self):
         self.limpa_tela()
+        Label(self.frame2, text="Sistema de Gerenciamento de Contas", bg = '#1d1e1e', fg = 'white',font=('Arial', 16, 'bold')).pack()
         
         x = 0.100
         y = 0.10
@@ -121,16 +120,16 @@ class Application:
         usuario = self.lista_usuarios[usuario_index]
         
         Label(self.frame2, text=f"Bem vindo, {usuario['nome']}",
-               bg = '#2f3031', fg = 'white', font=('Arial', 12)).place(relx=0.0, rely=0.10)
+               bg = '#1d1e1e', fg = 'white', font=('Arial', 12)).place(relx=0.0, rely=0.10)
         
         Label(self.frame2, text=f"CPF {usuario['cpf']}",
-               bg = '#2f3031', fg = 'white', font=('Arial', 12)).place(relx=0.25, rely=0.10)
+               bg = '#1d1e1e', fg = 'white', font=('Arial', 12)).place(relx=0.25, rely=0.10)
         
         Label(self.frame2, text=f"Data Nasc {usuario['data_nascimento']}",
-               bg = '#2f3031', fg = 'white', font=('Arial', 12)).place(relx=0.45, rely=0.10)
+               bg = '#1d1e1e', fg = 'white', font=('Arial', 12)).place(relx=0.45, rely=0.10)
         
         Label(self.frame2, text=f"Endereço {usuario['endereco']}",
-               bg = '#2f3031', fg = 'white', font=('Arial', 12)).place(relx=0.65, rely=0.10)
+               bg = '#1d1e1e', fg = 'white', font=('Arial', 12)).place(relx=0.65, rely=0.10)
         
         for count, conta in enumerate(usuario["contas"]):
             self.contaBanco = Button(self.frame, text=f"Agência: {conta['agencia']} - C/C: {conta['conta_corrente']}", font=('Arial', 14,'bold'),
@@ -163,23 +162,35 @@ class Application:
         conta_corrente_entry = Entry(self.frame)
         conta_corrente_entry.place(relx = 0.425, rely=0.3)
 
-        btnSalvarConta = Button(self.frame, text="Salvar", bg="#2ac70e", font=('Arial',10,'bold'), command=lambda: self.salvarConta(usuario['nome'],usuario_index, agencia_entry.get(), conta_corrente_entry.get()))
-        btnSalvarConta.pack()
+        Label(self.frame, text="Limite", bg="#2f3031", fg = "white",font=('Arial', 14)).place(relx=0.150, rely=0.5)
+        limite_entry = Entry(self.frame)
+        limite_entry.place(relx = 0.150, rely=0.6)
+
+        btnSalvarConta = Button(self.frame, text="Salvar", bg="#2ac70e", font=('Arial',10,'bold'),
+                                 command=lambda: self.salvarConta(usuario['nome'],usuario_index, agencia_entry.get(), conta_corrente_entry.get(), 
+                                                                  limite_entry.get()))
+        btnSalvarConta.place(relx=0.80, rely=0.85)
 
         btnVoltar = Button(self.frame, text="Voltar", bg="red", fg="white",font=('Arial',10,'bold'), command=lambda: self.mostraConta(usuario_index))
         btnVoltar.place(relx=0.90, rely=0.85)
 
-    def salvarConta(self, nome ,usuario_index, agencia, conta_corrente):
+    def salvarConta(self, nome ,usuario_index, agencia, conta_corrente, limite):
         if len(agencia) > 5 or len(conta_corrente) > 5:
             return messagebox.showinfo("Aviso!", "Agencia e Conta corrente só podem ter no máximo 5 caracteres!")
         if len(agencia) == 0 or len(conta_corrente) == 0:
             return messagebox.showinfo("Aviso!", "Todos os campos são obrigatórios!")
-
+        try:
+            novo_limite = int(limite)
+        except:
+            return messagebox.showinfo("Erro!", "O campo limite só aceita números!")
+        if novo_limite <= 0:
+            return messagebox.showinfo("Erro", "Digite um limite acima de 0")
         self.lista_usuarios[usuario_index]["contas"].append({
             "usuario":nome,
             "agencia": agencia,
             "conta_corrente": conta_corrente,
             "saldo":1000,
+            "limite": novo_limite,
             "extrato":[]
         })
         self.mostraConta(usuario_index)
@@ -195,6 +206,9 @@ class Application:
 
         labelNome = Label(self.frame2, text=f"Bem vindo, {usuario['nome']}", bg="#1d1e1e", fg="white", font=('Arial', 14))
         labelNome.place(relx=0.00, rely=0.03, relwidth=0.2)
+
+        labelSaldo = Label(self.frame2, text=f"Limite de Saque: R$ {conta['limite']:.2f}", bg="#1d1e1e", fg="white", font=('Arial', 14))
+        labelSaldo.place(relx=0.4, rely=0.03)
 
         self.labelSaldo = Label(self.frame2, text=f"Saldo: R$ {conta['saldo']:.2f}", bg="#1d1e1e", fg="white", font=('Arial', 14))
         self.labelSaldo.place(relx=0.8, rely=0.03, relwidth=0.2)
@@ -233,6 +247,8 @@ class Application:
         botaoSair = Button(self.frame2, text="Sair", font=('Arial', 14), command=lambda: self.mostraConta(usuario_index), bg="#101527", fg="#11EC41")
         botaoSair.place(relx=0.95, rely=0.60)
 
+    #def botaoLimite(self, )
+
 
     
 #---------------------------------- Criando tabela com TTK -------------------------------------------------------------------------   
@@ -270,11 +286,12 @@ class Application:
 
         conta = self.lista_usuarios[usuario_index]["contas"][conta_index]
         saldo = conta['saldo']
+        limite = int(conta['limite'])
 
         try:
             if saqueEntry:
                 saque = float(saqueEntry)
-                if saque <= self.limite:
+                if saque <= limite:
                     if saque > 0:
                         if saque <= saldo:
                             saldo -= saque
@@ -285,7 +302,7 @@ class Application:
                         self.entrySaque.delete(0, END)
                         return messagebox.showinfo("Erro", "Digite um número válido!")
                 else:
-                    return messagebox.showinfo("Negado", "O saque excedeu o limite de 500 reais!")
+                    return messagebox.showinfo("Negado", f"O saque excedeu o limite de R$ {limite:.2f}")
             if depositoEntry:
                 deposito = float(depositoEntry)
                 if deposito > 0:
